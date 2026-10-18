@@ -54,7 +54,7 @@ import {
     ComboboxList,
 } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DEFAULT_CURRENCY } from "@/constant/global";
+import { CURRENCY_SYMBOL } from "@/lib/currency";
 
 import { trackEvent } from "@/lib/analytics";
 import { FormFieldConfig, MainFormProps, SelectOption } from "./types";
@@ -1352,7 +1352,7 @@ export const AmountInput = <T extends FieldValues = FieldValues>({
     control,
     error,
 }: ControllerProps<T>) => {
-    const symbol = field.currencySymbol ?? DEFAULT_CURRENCY;
+    const symbol = field.currencySymbol ?? CURRENCY_SYMBOL;
 
     return (
         <Controller
