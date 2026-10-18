@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // Extra hostnames the dev server answers besides localhost, e.g. local
   // names from a proxy. Set only in your own .env.local
   allowedDevOrigins: (process.env.DEV_ORIGINS ?? "").split(",").map((host) => host.trim()).filter(Boolean),
-  cacheComponents: true,
+  cacheComponents: false,
   partialPrefetching: true,
   cacheLife: {
     // Public catalogue pages: refreshed in the background every 2 minutes.
