@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MANDE Shop
 
-## Getting Started
+The customer shop (`shop.mande.com.ng`): browse, search and buy furniture from MANDE manufacturers. Next.js 16 with Cache Components; the catalogue pages render on the server and the visitor's own data (cart, wishlist, account) loads in the browser. The plan is `../SHOP_IMPLEMENTATION.md`, and the project rules are in `CLAUDE.md`.
 
-First, run the development server:
+## Getting started
+
+Needs the API (`mande-backend`) running, on http://localhost:4000 by default.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3020. The dev port is fixed in `package.json`, so the shop never clashes with `mande-frontend` (3010).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js reads `.env.local`, which git ignores. Without one, the defaults below work for local development.
 
-## Learn More
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+NEXT_PUBLIC_SHOP_URL=http://localhost:3020
+NEXT_PUBLIC_MAIN_SITE_URL=http://localhost:3010
+```
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Purpose | Required | Default | Read in |
+| --- | --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | Base URL of the REST API | No (yes in production) | `http://localhost:4000/api/v1` | `lib/site.ts` |
+| `NEXT_PUBLIC_SHOP_URL` | The shop's own public URL, for SEO, the sitemap and absolute links | No (yes in production) | `http://localhost:3020` | `lib/site.ts` |
+| `NEXT_PUBLIC_MAIN_SITE_URL` | The main MANDE site (`mande-frontend`), for links back to it | No (yes in production) | `http://localhost:3010` | `lib/site.ts` |
+| `DEV_ORIGINS` | Extra hostnames the dev server answers besides `localhost`, comma-separated (e.g. local names from `../local-proxy`). Only for your own machine | No | none | `next.config.ts` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`NEXT_PUBLIC_*` values are inlined into the browser bundle at build time, so never put secrets in them, and rebuild after changing them.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Starts the dev server on http://localhost:3020 |
+| `npm run build` | Production build (`next build`) |
+| `npm run start` | Serves the production build (run `build` first) on port 3000, or `PORT` if set |
+| `npm run lint` | Runs ESLint over the project |
