@@ -28,6 +28,8 @@ NEXT_PUBLIC_MAIN_SITE_URL=http://localhost:3010
 | `NEXT_PUBLIC_API_URL` | Base URL of the REST API | No (yes in production) | `http://localhost:4000/api/v1` | `lib/site.ts` |
 | `NEXT_PUBLIC_SHOP_URL` | The shop's own public URL, for SEO, the sitemap and absolute links | No (yes in production) | `http://localhost:3020` | `lib/site.ts` |
 | `NEXT_PUBLIC_MAIN_SITE_URL` | The main MANDE site (`mande-frontend`), for links back to it | No (yes in production) | `http://localhost:3010` | `lib/site.ts` |
+| `NEXT_PUBLIC_SENTRY_DSN` | Where errors and traces go (the `mande-shop` Sentry project). Public. Empty: Sentry is off | No | none | `lib/sentry.ts` |
+| `SENTRY_AUTH_TOKEN` | Build only, never public: a Sentry org auth token that uploads source maps on `npm run build`, so production errors show the real code. Without it the upload is skipped | No (yes for production builds) | none | `next.config.ts` |
 | `DEV_ORIGINS` | Extra hostnames the dev server answers besides `localhost`, comma-separated (e.g. local names from `../local-proxy`). Only for your own machine | No | none | `next.config.ts` |
 
 `NEXT_PUBLIC_*` values are inlined into the browser bundle at build time, so never put secrets in them, and rebuild after changing them.

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
   // Extra hostnames the dev server answers besides localhost, e.g. local
@@ -25,4 +26,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+    org: "majeurs-holdings",
+    project: "mande-shop",
+    // Uploads source maps on production builds so errors show the real code.
+    // Without the token (a local build) the upload is skipped.
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    widenClientFileUpload: true,
+    // Browser events go through the shop first, so ad blockers don't drop them
+    tunnelRoute: "/monitoring",
+    silent: !process.env.CI,
+});
