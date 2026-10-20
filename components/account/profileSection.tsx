@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import MainForm from "@/components/customForm";
 import type { FormFieldConfig } from "@/components/customForm/types";
-import { validators } from "@/components/customForm/form.validators";
+import { PHONE_PLACEHOLDER, validators } from "@/components/customForm/form.validators";
 import { FormSubmitButton } from "@/components/customForm/formButtons";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { getErrorMessage } from "@/lib/api";
@@ -51,7 +51,7 @@ function DetailsForm({ profile }: { profile: CustomerProfile }) {
         { name: "firstName", type: "text", label: "First name", autoComplete: "given-name", validation: validators.name("First name") },
         { name: "lastName", type: "text", label: "Last name", autoComplete: "family-name", validation: validators.name("Last name") },
         { name: "email", type: "email", label: "Email", readOnly: true, description: "You sign in with this email, so it can't be changed." },
-        { name: "phone", type: "tel", label: "Phone number", autoComplete: "tel", validation: validators.phone() },
+        { name: "phone", type: "tel", label: "Phone number", placeholder: PHONE_PLACEHOLDER, autoComplete: "tel", validation: validators.phone() },
         { name: "marketingOptIn", type: "checkbox", label: "Send me news and offers from MANDE Shop" },
     ];
 

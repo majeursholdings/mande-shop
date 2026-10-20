@@ -7,12 +7,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import MainForm from "@/components/customForm";
 import type { FormFieldConfig } from "@/components/customForm/types";
-import { validators } from "@/components/customForm/form.validators";
+import { PHONE_PLACEHOLDER, validators } from "@/components/customForm/form.validators";
 import { LOGIN_URL, VERIFY_URL, safeNextPath, withNext } from "@/constant/auth";
+import { legalHref } from "@/constant/legal";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { getErrorMessage } from "@/lib/api";
 import { authService } from "@/lib/services/authService";
-import { MAIN_SITE_URL } from "@/lib/site";
 
 type SignUpValues = {
     firstName: string;
@@ -31,8 +31,8 @@ type SignUpValues = {
 // code), so this always moves on to entering the code.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const legalLink = (path: string, label: string) => (
-    <a href={new URL(path, MAIN_SITE_URL).toString()} target="_blank" rel="noopener noreferrer" className="font-medium text-secondary-700 hover:underline">
+const legalLink = (slug: string, label: string) => (
+    <a href={legalHref(slug)} target="_blank" rel="noopener noreferrer" className="font-medium text-secondary-700 hover:underline">
         {label}
     </a>
 );
@@ -57,7 +57,7 @@ export default function SignUpForm() {
             name: "phone",
             type: "tel",
             label: "Phone number",
-            placeholder: "+234 801 234 5678",
+            placeholder: PHONE_PLACEHOLDER,
             autoComplete: "tel",
             description: "For delivery updates on your orders.",
             validation: validators.phone(),
@@ -75,7 +75,7 @@ export default function SignUpForm() {
             type: "checkbox",
             label: (
                 <>
-                    I agree to the {legalLink("/terms-and-conditions", "Terms")} and {legalLink("/privacy-policy", "Privacy Policy")}
+                    I agree to the {legalLink("terms-and-conditions", "Terms")} and {legalLink("privacy-policy", "Privacy Policy")}
                 </>
             ),
             validation: { validate: (value: boolean) => value === true || "Agree to the Terms and Privacy Policy to sign up" },

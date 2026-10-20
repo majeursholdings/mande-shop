@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { SIGN_UP_URL, safeNextPath, withNext } from "@/constant/auth";
 import { queryKeys } from "@/lib/queryKeys";
+import { savePendingWishlist } from "@/lib/pendingWishlist";
 import { authService } from "@/lib/services/authService";
 import { maskEmail } from "@/lib/utils";
 import OtpCodeForm from "./otpCodeForm";
@@ -37,6 +38,7 @@ export default function VerifyEmailForm() {
         const result = await authService.verifyEmail(email, code);
         queryClient.setQueryData(queryKeys.customer.me(), result.user);
         toast.success("Your email is verified. Welcome to MANDE Shop!");
+        void savePendingWishlist(queryClient);
         router.replace(safeNextPath(next));
     };
 

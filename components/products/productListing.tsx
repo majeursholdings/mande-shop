@@ -17,6 +17,7 @@ export default async function ProductListing({
     basePath,
     category,
     subcategory,
+    seller,
     anchor = "",
     emptyText = "Products will show here as soon as they're listed.",
 }: {
@@ -25,6 +26,8 @@ export default async function ProductListing({
     basePath: string;
     category?: string;
     subcategory?: string;
+    /** A store's slug, for its page */
+    seller?: string;
     /** e.g. "#products", to bring the list back into view on a new page */
     anchor?: string;
     emptyText?: string;
@@ -35,7 +38,7 @@ export default async function ProductListing({
 
     let result: ProductPage;
     try {
-        result = await getProductsPage({ page, sort, category, subcategory });
+        result = await getProductsPage({ page, sort, category, subcategory, seller });
     } catch {
         return (
             <p role="alert" className="rounded-xl border border-border bg-white p-6 text-center text-sm text-muted-foreground">

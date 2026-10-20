@@ -86,7 +86,7 @@ const refreshClient = axios.create({
 
 /** Calls that work without a login (or are the login): no session to restore first, and no refresh on a 401. */
 const isPublicRoute = (url: string) =>
-    /^\/?shop\/auth\/(login|register|refresh|logout$|verify-email|password\/(forgot|reset))/.test(url) || /^\/?shop\/products/.test(url);
+    /^\/?shop\/auth\/(login|register|refresh|logout$|verify-email|password\/(forgot|reset))/.test(url) || /^\/?shop\/(products|cart\/quote)/.test(url);
 
 let sessionRestore: Promise<void> | null = null;
 

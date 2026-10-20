@@ -11,6 +11,7 @@ import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { getErrorMessage } from "@/lib/api";
 import { authService } from "@/lib/services/authService";
 import { AccountPanel } from "./accountShell";
+import TwoFactorSettings from "./twoFactorSettings";
 
 type PasswordValues = { currentPassword: string; newPassword: string; confirmPassword: string };
 
@@ -55,42 +56,47 @@ export default function SecuritySection() {
     };
 
     return (
-        <AccountPanel title="Security" description="Change your password. You'll confirm it's you with a code.">
-            <MainForm<PasswordValues>
-                methods={methods}
-                fields={[
-                    { name: "currentPassword", type: "password", label: "Current password", autoComplete: "current-password", validation: validators.required("Your current password") },
-                    { name: "newPassword", type: "password", label: "New password", autoComplete: "new-password", validation: validators.password() },
-                    {
-                        name: "confirmPassword",
-                        type: "password",
-                        label: "Confirm new password",
-                        autoComplete: "new-password",
-                        validation: validators.confirmPassword(() => methods.getValues(), "newPassword"),
-                    },
-                ]}
-                onSubmit={handleSubmit}
-                isLoading={isLoading}
-                className="max-w-md"
-                renderFooter={({ isLoading, canSubmit }) => (
-                    <div>
-                        <FormSubmitButton label="Change password" loadingLabel="Sending code..." isLoading={isLoading} disabled={!canSubmit} />
-                    </div>
-                )}
-            />
-
-            {pending && customer && (
-                <OtpCodeDialog
-                    open
-                    onOpenChange={(open) => !open && setPending(null)}
-                    title="Confirm it's you"
-                    email={customer.email}
-                    channel={channel}
-                    confirmLabel="Change password"
-                    onVerified={handleCode}
-                    onResend={channel === "email" ? () => authService.sendReauthCode("change_password") : undefined}
+        <div className="flex flex-col gap-6">
+            <AccountPanel title="Two-factor authentication" description="Add a code to your password when you sign in, so nobody else can get into your account.">
+                <TwoFactorSettings />
+            </AccountPanel>
+            <AccountPanel title="Password" description="Change your password. You'll confirm it's you with a code.">
+                <MainForm<PasswordValues>
+                    methods={methods}
+                    fields={[
+                        { name: "currentPassword", type: "password", label: "Current password", autoComplete: "current-password", validation: validators.required("Your current password") },
+                        { name: "newPassword", type: "password", label: "New password", autoComplete: "new-password", validation: validators.password() },
+                        {
+                            name: "confirmPassword",
+                            type: "password",
+                            label: "Confirm new password",
+                            autoComplete: "new-password",
+                            validation: validators.confirmPassword(() => methods.getValues(), "newPassword"),
+                        },
+                    ]}
+                    onSubmit={handleSubmit}
+                    isLoading={isLoading}
+                    className="max-w-md"
+                    renderFooter={({ isLoading, canSubmit }) => (
+                        <div>
+                            <FormSubmitButton label="Change password" loadingLabel="Sending code..." isLoading={isLoading} disabled={!canSubmit} />
+                        </div>
+                    )}
                 />
-            )}
-        </AccountPanel>
+
+                {pending && customer && (
+                    <OtpCodeDialog
+                        open
+                        onOpenChange={(open) => !open && setPending(null)}
+                        title="Confirm it's you"
+                        email={customer.email}
+                        channel={channel}
+                        confirmLabel="Change password"
+                        onVerified={handleCode}
+                        onResend={channel === "email" ? () => authService.sendReauthCode("change_password") : undefined}
+                    />
+                )}
+            </AccountPanel>
+        </div>
     );
 }

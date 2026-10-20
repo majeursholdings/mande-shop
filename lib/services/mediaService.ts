@@ -3,10 +3,10 @@ import { api } from "@/lib/api";
 
 /**
  * What an upload is for. The API decides who may upload what (see
- * mande-backend's media.validation.ts), and none of its purposes are open to
- * customers yet. Add one here when the API does (e.g. review photos).
+ * mande-backend's media.validation.ts); these are the purposes open to
+ * customers.
  */
-export type UploadPurpose = never;
+export type UploadPurpose = "return-photo";
 
 interface SignatureResponse {
     uploadUrl: string;

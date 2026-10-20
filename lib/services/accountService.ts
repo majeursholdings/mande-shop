@@ -38,3 +38,10 @@ export const accountService = {
         return data.addresses;
     },
 };
+
+export type SupportSubject = "order" | "delivery" | "returns" | "payment" | "account" | "other";
+
+/** A message to MANDE from the Support page (to the team's inbox; they reply by email). */
+export async function sendSupportMessage(message: { subject: SupportSubject; orderCode?: string; message: string }): Promise<void> {
+    await api.post("/shop/me/support", message);
+}

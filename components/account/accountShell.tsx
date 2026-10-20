@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect, usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, MapPin, ShieldCheck, UserRound, type LucideIcon } from "lucide-react";
+import { Headset, LogOut, MapPin, Package, RotateCcw, Scale, ShieldCheck, Star, UserRound, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LOGIN_URL, withNext } from "@/constant/auth";
@@ -19,23 +20,65 @@ import { cn } from "@/lib/utils";
 // sign in, and brought back here afterwards. The section always renders (so
 // the page prerenders, and Next can check its navigation), but loads its
 // data only once the customer is known (useCurrentCustomer), showing its
-// skeleton until then. Orders, reviews and notifications join the sections
-// as they're built.
+// skeleton until then. Reviews and notifications join the sections as
+// they're built.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SECTIONS: { href: string; label: string; icon: LucideIcon }[] = [
+    { href: "/account/orders", label: "Orders", icon: Package },
+    { href: "/account/returns", label: "Returns & credit", icon: RotateCcw },
+    { href: "/account/reviews", label: "Reviews", icon: Star },
     { href: "/account", label: "Your details", icon: UserRound },
     { href: "/account/addresses", label: "Addresses", icon: MapPin },
     { href: "/account/security", label: "Security", icon: ShieldCheck },
+    { href: "/account/support", label: "Support", icon: Headset },
+    { href: "/account/legal", label: "Legal", icon: Scale },
 ];
 
-export default function AccountShell({ children }: { children: React.ReactNode }) {
+/** Sends anyone not signed in to sign in, and back here after. Reads the path, so it sits in <Suspense>. */
+function SignInGuard() {
     const pathname = usePathname();
+    const { customer, isPending, isError } = useCurrentCustomer();
+    if (!isPending && !isError && !customer) redirect(withNext(LOGIN_URL, pathname));
+    return null;
+}
+
+/** The account's sections, the current one marked. Reads the path, so it sits in <Suspense> (unmarked until then). */
+function SectionLinks({ marked = true }: { marked?: boolean }) {
+    return SECTIONS.map(({ href, label, icon: Icon }) => <SectionLink key={href} href={href} label={label} icon={Icon} marked={marked} />);
+}
+
+function SectionLink({ href, label, icon: Icon, marked }: { href: string; label: string; icon: LucideIcon; marked: boolean }) {
+    return marked ? <MarkedLink href={href} label={label} icon={Icon} /> : <PlainLink href={href} label={label} icon={Icon} active={false} />;
+}
+
+function MarkedLink({ href, label, icon }: { href: string; label: string; icon: LucideIcon }) {
+    const pathname = usePathname();
+    // An order's own page counts as Orders
+    const active = pathname === href || (href === "/account/orders" && pathname.startsWith("/account/orders/"));
+    return <PlainLink href={href} label={label} icon={icon} active={active} />;
+}
+
+function PlainLink({ href, label, icon: Icon, active }: { href: string; label: string; icon: LucideIcon; active: boolean }) {
+    return (
+        <Link
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+                "flex shrink-0 items-center gap-2 rounded-button px-3 py-2 text-sm font-medium transition-colors",
+                active ? "bg-white text-secondary-700 shadow-sm" : "text-mist-700 hover:bg-white/70",
+            )}
+        >
+            <Icon className="size-4" aria-hidden />
+            {label}
+        </Link>
+    );
+}
+
+export default function AccountShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { customer, isPending, isError } = useCurrentCustomer();
-
-    if (!isPending && !isError && !customer) redirect(withNext(LOGIN_URL, pathname));
+    const { customer, isError } = useCurrentCustomer();
 
     const signOut = async () => {
         try {
@@ -51,6 +94,9 @@ export default function AccountShell({ children }: { children: React.ReactNode }
 
     return (
         <main className="flex flex-1 bg-mist-50 px-4 py-8 sm:px-6 lg:px-8">
+            <Suspense fallback={null}>
+                <SignInGuard />
+            </Suspense>
             <div className="container mx-auto flex flex-col gap-6 lg:flex-row lg:gap-8">
                 <aside className="flex flex-col gap-4 lg:w-64 lg:shrink-0">
                     <div className="flex flex-col gap-1">
@@ -59,23 +105,9 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                         {customer ? <p className="truncate text-sm text-mist-500">{customer.email}</p> : <Skeleton className="h-5 w-48" />}
                     </div>
                     <nav aria-label="Account sections" className="flex gap-1 overflow-x-auto lg:flex-col">
-                        {SECTIONS.map(({ href, label, icon: Icon }) => {
-                            const active = pathname === href;
-                            return (
-                                <Link
-                                    key={href}
-                                    href={href}
-                                    aria-current={active ? "page" : undefined}
-                                    className={cn(
-                                        "flex shrink-0 items-center gap-2 rounded-button px-3 py-2 text-sm font-medium transition-colors",
-                                        active ? "bg-white text-secondary-700 shadow-sm" : "text-mist-700 hover:bg-white/70",
-                                    )}
-                                >
-                                    <Icon className="size-4" aria-hidden />
-                                    {label}
-                                </Link>
-                            );
-                        })}
+                        <Suspense fallback={<SectionLinks marked={false} />}>
+                            <SectionLinks />
+                        </Suspense>
                         <button
                             type="button"
                             onClick={signOut}

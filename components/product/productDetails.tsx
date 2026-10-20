@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { Clock, MapPin, PackageCheck, PackageX, Store } from "lucide-react";
+import { Clock, PackageCheck, PackageX } from "lucide-react";
 import { categoryHref, getShopSubcategory, sellerHref, subcategoryHref } from "@/constant/shop";
 import { formatKobo } from "@/lib/currency";
 import { SHOP_URL } from "@/lib/site";
 import type { ProductDetail } from "@/lib/types/shop";
 import Breadcrumbs, { type Crumb } from "@/components/layout/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Suspense } from "react";
+import ProductPurchase from "@/components/cart/productPurchase";
+import RelatedProducts, { RelatedProductsSkeleton } from "./relatedProducts";
+import ReportProduct from "./reportProduct";
+import ReviewsSection, { ReviewsSectionSkeleton } from "./reviewsSection";
+import SellerCard from "./sellerCard";
+import TrustPanel from "./trustPanel";
 import ProductGallery from "./productGallery";
 import RatingSummary from "./ratingSummary";
 
@@ -98,34 +105,17 @@ export default function ProductDetails({ product }: { product: ProductDetail }) 
                                 {product.seller.name}
                             </Link>
                         </p>
-                        <RatingSummary rating={product.rating} />
+                        <a href="#reviews" className="self-start rounded outline-none hover:opacity-80 focus-visible:ring-3 focus-visible:ring-ring/50">
+                            <RatingSummary rating={product.rating} />
+                        </a>
                     </div>
 
                     <p className="text-3xl font-semibold text-neutral-900">{formatKobo(product.priceKobo)}</p>
                     <Availability product={product} />
+                    <ProductPurchase product={{ id: product.id, slug: product.slug, title: product.title, stock: product.stock }} />
 
-                    <section aria-labelledby="seller-heading" className="rounded-xl border border-border bg-white p-4">
-                        <h2 id="seller-heading" className="sr-only">
-                            The seller
-                        </h2>
-                        <div className="flex items-start gap-3">
-                            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-mist-100 text-primary-700">
-                                <Store className="size-5" aria-hidden />
-                            </span>
-                            <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                <Link href={sellerHref(product.seller.slug)} className="truncate font-medium text-neutral-900 hover:text-primary-700">
-                                    {product.seller.name}
-                                </Link>
-                                {product.seller.state && (
-                                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                        <MapPin className="size-3.5" aria-hidden />
-                                        {product.seller.state}
-                                    </p>
-                                )}
-                                <RatingSummary rating={product.seller.rating} className="text-xs" />
-                            </div>
-                        </div>
-                    </section>
+                    <SellerCard seller={product.seller} />
+                    <TrustPanel changeOfMindReturns={product.changeOfMindReturns !== false} />
 
                     {product.description && (
                         <section aria-labelledby="description-heading" className="flex flex-col gap-2 border-t border-border pt-5">
@@ -135,8 +125,16 @@ export default function ProductDetails({ product }: { product: ProductDetail }) 
                             <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-700">{product.description}</p>
                         </section>
                     )}
+                    <ReportProduct slug={product.slug} title={product.title} />
                 </div>
             </div>
+
+            <Suspense fallback={<ReviewsSectionSkeleton />}>
+                <ReviewsSection slug={product.slug} />
+            </Suspense>
+            <Suspense fallback={<RelatedProductsSkeleton />}>
+                <RelatedProducts slug={product.slug} sellerName={product.seller.name} />
+            </Suspense>
         </div>
     );
 }

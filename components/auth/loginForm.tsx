@@ -13,6 +13,7 @@ import { FORGOT_PASSWORD_URL, SIGN_UP_URL, safeNextPath, withNext } from "@/cons
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { MandeApiError, getErrorMessage } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
+import { savePendingWishlist } from "@/lib/pendingWishlist";
 import { authService } from "@/lib/services/authService";
 import { MAIN_SITE_URL } from "@/lib/site";
 import type { LoginMfaRequired, LoginSuccess } from "@/lib/types/account";
@@ -70,6 +71,7 @@ export default function LoginForm() {
         setChallenge(null);
         setUnverifiedEmail(null);
         toast.success(`Welcome back${result.user.profile?.firstName ? `, ${result.user.profile.firstName}` : ""}`);
+        void savePendingWishlist(queryClient);
         router.replace(safeNextPath(next));
     };
 

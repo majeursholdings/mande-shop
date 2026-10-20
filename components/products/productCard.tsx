@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ImageOff, Star } from "lucide-react";
 import { formatKobo } from "@/lib/currency";
 import type { ProductCardData } from "@/lib/types/shop";
+import WishlistHeart from "@/components/wishlist/wishlistHeart";
+import CardAddToCart from "@/components/cart/cardAddToCart";
 
 export default function ProductCard({ product }: { product: ProductCardData }) {
     const soldOut = product.stock === 0;
@@ -24,6 +26,8 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                         <ImageOff className="size-8" aria-hidden />
                     </div>
                 )}
+                {/* Above the card's link, so tapping it saves rather than opens the product */}
+                <WishlistHeart productId={product.id} title={product.title} className="absolute top-2 right-2 z-10" />
                 {(soldOut || madeToOrder) && (
                     <span className="absolute top-2 left-2 rounded-full bg-white/95 px-2 py-0.5 text-xs font-medium text-neutral-700">
                         {soldOut ? "Sold out" : "Made to order"}
@@ -57,6 +61,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                 )}
 
                 <p className="mt-auto pt-2 text-base font-semibold text-neutral-900">{formatKobo(product.priceKobo)}</p>
+                <CardAddToCart product={{ id: product.id, slug: product.slug, title: product.title, stock: product.stock }} />
             </div>
         </article>
     );

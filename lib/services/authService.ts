@@ -78,6 +78,25 @@ export const authService = {
         return data.reauthToken;
     },
 
+    /** Starts setting up an authenticator app: the secret for the QR code. Nothing changes until a code checks out. */
+    async setupAppTwoFactor(reauthToken: string): Promise<{ secret: string; otpauthUri: string }> {
+        const { data } = await api.post<{ secret: string; otpauthUri: string }>("/shop/auth/2fa/app/setup", {}, { headers: { "X-Reauth-Token": reauthToken } });
+        return data;
+    },
+
+    /** Emails the code that turns on email two-factor. */
+    async sendTwoFactorEmailCode(reauthToken: string): Promise<void> {
+        await api.post("/shop/auth/2fa/email/send-code", {}, { headers: { "X-Reauth-Token": reauthToken } });
+    },
+
+    async enableTwoFactor(method: "email" | "app", code: string, reauthToken: string): Promise<void> {
+        await api.post("/shop/auth/2fa/enable", { method, code }, { headers: { "X-Reauth-Token": reauthToken } });
+    },
+
+    async disableTwoFactor(reauthToken: string): Promise<void> {
+        await api.post("/shop/auth/2fa/disable", {}, { headers: { "X-Reauth-Token": reauthToken } });
+    },
+
     async changePassword(reauthToken: string, currentPassword: string, newPassword: string): Promise<void> {
         await api.post("/shop/auth/password/change", { currentPassword, newPassword }, { headers: { "X-Reauth-Token": reauthToken } });
     },

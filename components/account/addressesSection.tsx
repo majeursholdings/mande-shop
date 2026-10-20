@@ -7,7 +7,7 @@ import { MapPin, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import MainForm from "@/components/customForm";
 import type { FormFieldConfig } from "@/components/customForm/types";
-import { validators } from "@/components/customForm/form.validators";
+import { PHONE_PLACEHOLDER, validators } from "@/components/customForm/form.validators";
 import { FormCancelButton, FormSubmitButton, PRIMARY_BUTTON_CLASS } from "@/components/customForm/formButtons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -167,7 +167,7 @@ function AddressDialog({ address, isFirst, onClose, onSaved }: { address: Addres
     const fields: FormFieldConfig[] = [
         { name: "label", type: "text", label: "Label", placeholder: "Home, Office...", maxLength: 40 },
         { name: "name", type: "text", label: "Who receives it", autoComplete: "name", validation: validators.required("Who receives it") },
-        { name: "phone", type: "tel", label: "Their phone number", autoComplete: "tel", validation: validators.phone() },
+        { name: "phone", type: "tel", label: "Their phone number", placeholder: PHONE_PLACEHOLDER, autoComplete: "tel", validation: validators.phone() },
         { name: "street", type: "text", label: "Street address", autoComplete: "street-address", validation: validators.required("The street address") },
         { name: "city", type: "text", label: "City or town", autoComplete: "address-level2", validation: validators.required("The city or town") },
         { name: "state", type: "combobox", label: "State", options: STATE_OPTIONS, emptyMessage: "No state matches", validation: validators.required("The state") },

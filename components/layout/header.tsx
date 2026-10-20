@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart, Search } from "lucide-react";
+import CartLink from "./cartLink";
 import AccountMenu from "./accountMenu";
 
 const ICON_LINK_CLASS =
@@ -9,8 +10,8 @@ const ICON_LINK_CLASS =
 // ─────────────────────────────────────────────────────────────────────────────
 // The shop header, in the website's dark green: the logo, then wishlist, cart
 // and account. It's part of every page's static shell, so nothing here
-// depends on who is visiting: the account link is a small client component
-// (accountMenu.tsx), and the cart count will be one too (SHOP_IMPLEMENTATION.md 10.3).
+// depends on who is visiting: the account link and the cart count are small
+// client components (accountMenu.tsx, cartLink.tsx; SHOP_IMPLEMENTATION.md 10.3).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Header() {
@@ -34,12 +35,19 @@ export default function Header() {
                 </Link>
 
                 <nav aria-label="Your shop" className="flex items-center gap-1">
+                    <Link
+                        href="/sellers"
+                        className="mr-1 hidden rounded-button px-3 py-2 text-sm font-medium text-mist-100/80 outline-none transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-primary-300 sm:block"
+                    >
+                        Sellers
+                    </Link>
+                    <Link href="/search" aria-label="Search the shop" className={ICON_LINK_CLASS}>
+                        <Search className="size-5" aria-hidden />
+                    </Link>
                     <Link href="/wishlist" aria-label="Wishlist" className={ICON_LINK_CLASS}>
                         <Heart className="size-5" aria-hidden />
                     </Link>
-                    <Link href="/cart" aria-label="Cart" className={ICON_LINK_CLASS}>
-                        <ShoppingCart className="size-5" aria-hidden />
-                    </Link>
+                    <CartLink className={ICON_LINK_CLASS} />
                     <AccountMenu className={ICON_LINK_CLASS} />
                 </nav>
             </div>
