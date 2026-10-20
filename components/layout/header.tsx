@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShoppingCart, User } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
+import AccountMenu from "./accountMenu";
 
 const ICON_LINK_CLASS =
     "flex size-10 items-center justify-center rounded-button text-mist-100/80 outline-none transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-primary-300";
@@ -8,8 +9,8 @@ const ICON_LINK_CLASS =
 // ─────────────────────────────────────────────────────────────────────────────
 // The shop header, in the website's dark green: the logo, then wishlist, cart
 // and account. It's part of every page's static shell, so nothing here
-// depends on who is visiting; the cart count and account state will be small
-// client components dropped in here (SHOP_IMPLEMENTATION.md 10.3).
+// depends on who is visiting: the account link is a small client component
+// (accountMenu.tsx), and the cart count will be one too (SHOP_IMPLEMENTATION.md 10.3).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Header() {
@@ -39,9 +40,7 @@ export default function Header() {
                     <Link href="/cart" aria-label="Cart" className={ICON_LINK_CLASS}>
                         <ShoppingCart className="size-5" aria-hidden />
                     </Link>
-                    <Link href="/account" aria-label="Your account" className={ICON_LINK_CLASS}>
-                        <User className="size-5" aria-hidden />
-                    </Link>
+                    <AccountMenu className={ICON_LINK_CLASS} />
                 </nav>
             </div>
         </header>
