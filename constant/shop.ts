@@ -158,3 +158,15 @@ export function parsePage(value: unknown): number {
     const page = Number(Array.isArray(value) ? value[0] : value);
     return Number.isInteger(page) && page >= 1 ? Math.min(page, SHOP_MAX_PAGE) : 1;
 }
+
+/** The 36 states and the FCT: delivery addresses and delivery zones (SHOP_IMPLEMENTATION.md 5.3). */
+export const NIGERIAN_STATES = [
+    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta",
+    "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano",
+    "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun",
+    "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara",
+] as const;
+export type NigerianState = (typeof NIGERIAN_STATES)[number];
+
+/** The most delivery addresses a customer can save (SHOP_IMPLEMENTATION.md 7). */
+export const MAX_CUSTOMER_ADDRESSES = 5;
