@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LOGIN_URL, withNext } from "@/constant/auth";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
+import { useLiveUpdates } from "@/hooks/useLiveUpdates";
 import { getErrorMessage } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { authService } from "@/lib/services/authService";
@@ -79,6 +80,8 @@ export default function AccountShell({ children }: { children: React.ReactNode }
     const router = useRouter();
     const queryClient = useQueryClient();
     const { customer, isError } = useCurrentCustomer();
+    // Orders and returns update as sellers move them
+    useLiveUpdates();
 
     const signOut = async () => {
         try {
