@@ -1,0 +1,75 @@
+import type { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+
+/** The primary (maroon) button look — for actions that aren't a form's submit. */
+export const PRIMARY_BUTTON_CLASS =
+    "h-11 px-5 bg-secondary-700 hover:bg-secondary-900 text-white font-medium font-text rounded-button cursor-pointer transition-colors duration-300";
+
+/**
+ * Submit button shared by the shop's forms (account details, addresses,
+ * passwords): greyed out while disabled, and shows a spinner with
+ * `loadingLabel` while the request is in flight.
+ */
+export function FormSubmitButton({
+    label,
+    loadingLabel = label,
+    isLoading,
+    disabled,
+    onClick,
+    className,
+}: {
+    label: string;
+    loadingLabel?: string;
+    isLoading: boolean;
+    disabled: boolean;
+    /** Runs before the form submits, e.g. to note which of two submit buttons was used. */
+    onClick?: () => void;
+    className?: string;
+}) {
+    return (
+        <Button
+            type="submit"
+            onClick={onClick}
+            disabled={isLoading || disabled}
+            className={cn(
+                PRIMARY_BUTTON_CLASS,
+                // Stays red while submitting; only an idle, disabled button turns grey
+                !isLoading && "disabled:bg-mist-200 disabled:opacity-100",
+                className,
+            )}
+        >
+            {isLoading ? (
+                <span className="flex items-center gap-2">
+                    <Loader2 className="size-4 animate-spin" />
+                    {loadingLabel}
+                </span>
+            ) : (
+                label
+            )}
+        </Button>
+    );
+}
+
+/** Grey secondary button that sits beside a FormSubmitButton. */
+export function FormCancelButton({
+    onClick,
+    disabled = false,
+    children = "Cancel",
+}: {
+    onClick: () => void;
+    disabled?: boolean;
+    children?: ReactNode;
+}) {
+    return (
+        <Button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className="h-11 px-5 bg-mist-100 hover:bg-mist-200 text-mist-950 font-medium font-text rounded-button cursor-pointer transition-colors duration-300"
+        >
+            {children}
+        </Button>
+    );
+}
