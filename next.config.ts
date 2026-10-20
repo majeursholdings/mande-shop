@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   // Extra hostnames the dev server answers besides localhost, e.g. local
   // names from a proxy. Set only in your own .env.local
   allowedDevOrigins: (process.env.DEV_ORIGINS ?? "").split(",").map((host) => host.trim()).filter(Boolean),
+  // Vercel compresses responses itself. Next's own compression only runs
+  // locally, where it wraps the Sentry tunnel's proxied responses (below) and
+  // sets off a MaxListenersExceededWarning on every page load
+  compress: false,
   cacheComponents: true,
   partialPrefetching: true,
   cacheLife: {
