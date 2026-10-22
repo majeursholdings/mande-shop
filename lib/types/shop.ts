@@ -165,6 +165,8 @@ export type CustomerOrder = {
     refundedKobo: number;
     /** Of what was refunded, what went to their store credit. */
     refundedToCreditKobo: number;
+    /** Of what was refunded, card refunds not confirmed yet (still on their way). */
+    refundPendingKobo: number;
     sellers: OrderPart[];
 };
 

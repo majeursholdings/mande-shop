@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
+  // The browser tests (mande-frontend's npm run test:e2e) build into their
+  // own folder, so they run beside your npm run dev
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Extra hostnames the dev server answers besides localhost, e.g. local
   // names from a proxy. Set only in your own .env.local
   allowedDevOrigins: (process.env.DEV_ORIGINS ?? "").split(",").map((host) => host.trim()).filter(Boolean),

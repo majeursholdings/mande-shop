@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Clock, PackageCheck, PackageX } from "lucide-react";
 import { categoryHref, getShopSubcategory, sellerHref, subcategoryHref } from "@/constant/shop";
 import { formatKobo } from "@/lib/currency";
+import { getProductReviews } from "@/lib/catalogue/products";
 import { SHOP_URL } from "@/lib/site";
 import type { ProductDetail } from "@/lib/types/shop";
 import Breadcrumbs, { type Crumb } from "@/components/layout/breadcrumbs";
@@ -45,8 +46,22 @@ function Availability({ product }: { product: ProductDetail }) {
     );
 }
 
-/** Product data for search engines (schema.org Product), so results can show the price, stock and rating. */
-function ProductJsonLd({ product }: { product: ProductDetail }) {
+/** How many reviews go in the product data: the first page of /p/[slug]/reviews. */
+const JSON_LD_REVIEWS = 10;
+
+/**
+ * Product data for search engines (schema.org Product), so results can show
+ * the price, stock and rating, with the first page of reviews. Streamed in its
+ * own Suspense boundary so the reviews read never holds up the page; if it
+ * fails, the data goes out without them.
+ */
+async function ProductJsonLd({ product }: { product: ProductDetail }) {
+    const reviews =
+        product.rating.count > 0
+            ? await getProductReviews(product.slug, { page: 1, sort: "newest", limit: JSON_LD_REVIEWS })
+                  .then((page) => page?.reviews ?? [])
+                  .catch(() => [])
+            : [];
     const data = {
         "@context": "https://schema.org",
         "@type": "Product",
@@ -70,6 +85,15 @@ function ProductJsonLd({ product }: { product: ProductDetail }) {
         ...(product.rating.count > 0 && {
             aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating.average, reviewCount: product.rating.count },
         }),
+        ...(reviews.length > 0 && {
+            review: reviews.map((review) => ({
+                "@type": "Review",
+                author: { "@type": "Person", name: review.author },
+                datePublished: review.createdAt.slice(0, 10),
+                reviewBody: review.body || undefined,
+                reviewRating: { "@type": "Rating", ratingValue: review.rating, bestRating: 5, worstRating: 1 },
+            })),
+        }),
     };
     // "<" escaped so text in the product can't close the script tag
     return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
@@ -90,7 +114,9 @@ export default function ProductDetails({ product }: { product: ProductDetail }) 
 
     return (
         <div className="container mx-auto flex flex-col gap-6">
-            <ProductJsonLd product={product} />
+            <Suspense fallback={null}>
+                <ProductJsonLd product={product} />
+            </Suspense>
             <Breadcrumbs items={crumbs} />
 
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
