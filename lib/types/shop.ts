@@ -123,6 +123,8 @@ export type OrderLine = {
     changeOfMindReturns: boolean;
     /** How many aren't in a return yet. */
     returnableQuantity: number;
+    /** Made to order by MANDE (SHOP_IMPLEMENTATION.md 5.2.3): "in_production" with an estimated ready date, "ready", or "delayed"; null otherwise. */
+    production: { stage: "in_production" | "ready" | "delayed"; readyBy: string | null } | null;
 };
 
 /** A review the customer wrote, as their order shows it. */

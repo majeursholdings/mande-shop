@@ -76,6 +76,7 @@ export default function OrderSummary({
                                         {line.status === "cancelled" && (
                                             <span className="text-sm font-medium text-error-700">{line.cancelReason ?? "Cancelled"}, and refunded</span>
                                         )}
+                                        {line.production && (part.status === "awaiting_fulfilment" || part.status === "processing") && <ProductionNote production={line.production} />}
                                         {lineFooter?.(part, line)}
                                     </div>
                                     <span className="shrink-0 text-sm font-semibold text-mist-950">{formatKobo(line.unitPriceKobo * line.quantity)}</span>
@@ -152,5 +153,18 @@ export default function OrderSummary({
                 </dl>
             </aside>
         </div>
+    );
+}
+
+const READY_DATE = new Intl.DateTimeFormat("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "long", year: "numeric" });
+
+/** Where a made-to-order item stands: in production (with the estimate), ready to ship soon, or delayed. */
+function ProductionNote({ production }: { production: NonNullable<OrderPart["lines"][number]["production"]> }) {
+    if (production.stage === "ready") return <span className="text-sm font-medium text-primary-700">Ready to ship soon</span>;
+    if (production.stage === "delayed") return <span className="text-sm font-medium text-warning-700">Delayed: we&apos;ll tell you the new date soon</span>;
+    return (
+        <span className="text-sm text-mist-700">
+            In production{production.readyBy ? `, ready by about ${READY_DATE.format(new Date(production.readyBy))}` : ""}
+        </span>
     );
 }
