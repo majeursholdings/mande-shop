@@ -17,17 +17,18 @@ export type NewAddress = { name: string; phone: string; street: string; city: st
  * time to call (up to 500 characters). `useCredit` puts their store credit
  * towards it.
  */
-export type CheckoutRequest = { items: CartItem[]; note?: string; useCredit?: boolean } & ({ addressId: string } | { address: NewAddress; saveAddress: boolean });
+export type CheckoutRequest = { items: CartItem[]; note?: string; useCredit?: boolean; couponCodes?: string[] } & ({ addressId: string } | { address: NewAddress; saveAddress: boolean });
 
 export const checkoutService = {
     /** `checkoutUrl` is null when store credit paid for it all: the order is already paid. */
     async start(request: CheckoutRequest): Promise<{ order: CustomerOrder; checkoutUrl: string | null }> {
-        const { items, note, useCredit, ...where } = request;
+        const { items, note, useCredit, couponCodes, ...where } = request;
         const { data } = await api.post<{ order: CustomerOrder; checkoutUrl: string | null }>("/shop/checkout", {
             items: items.map(({ productId, quantity, pickup }) => ({ productId, quantity, ...(pickup && { pickup }) })),
             ...where,
             ...(note?.trim() && { note: note.trim() }),
             ...(useCredit && { useCredit: true }),
+            ...(couponCodes?.length && { couponCodes }),
         });
         return data;
     },

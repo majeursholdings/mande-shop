@@ -84,15 +84,24 @@ export type CartQuotePart = {
     seller: { slug: string; name: string; kind: "manufacturer" | "mande" };
     lines: CartQuoteLine[];
     itemsSubtotalKobo: number;
+    /** A coupon used on this seller's items, and what it took off. */
+    coupon: { code: string } | null;
+    discountKobo: number;
     deliveryFeeKobo: number | null;
     totalKobo: number | null;
 };
+
+/** What a coupon code typed at checkout did: applied to a seller's items, or why not. */
+export type CouponResult = { code: string; status: "applied"; sellerId: string; discountKobo: number } | { code: string; status: "rejected"; reason: string; message: string };
 
 export type CartQuote = {
     state: string | null;
     sellers: CartQuotePart[];
     missingProductIds: string[];
     itemsSubtotalKobo: number;
+    /** What coupons take off, across the sellers. */
+    discountKobo: number;
+    coupons: CouponResult[];
     deliveryFeeKobo: number | null;
     totalKobo: number | null;
     canCheckout: boolean;
@@ -114,6 +123,8 @@ export type OrderLine = {
     quantity: number;
     deliveryFeeKobo: number;
     pickup: boolean;
+    /** Its share of a coupon: taken off what a return of it gives back. */
+    discountKobo: number;
     /** "cancelled": it sold out before the payment came in, and was refunded. */
     status: "active" | "cancelled";
     cancelReason: string | null;
@@ -139,6 +150,9 @@ export type OrderPart = {
     shippedAt: string | null;
     deliveredAt: string | null;
     itemsSubtotalKobo: number;
+    /** A coupon used on this seller's items, and what it took off. */
+    coupon: { code: string } | null;
+    discountKobo: number;
     deliveryFeeKobo: number;
     /** Reviewing: open once delivered, until the window closes. */
     review: { open: boolean; until: string | null; seller: MyReview | null };

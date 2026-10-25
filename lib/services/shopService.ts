@@ -10,10 +10,12 @@ import type { CartQuote, WishlistPage } from "@/lib/types/shop";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const shopService = {
-    async quoteCart(items: CartItem[], state: NigerianState | null): Promise<CartQuote> {
+    /** `couponCodes`: codes typed at checkout, each matched to its seller (one per seller). */
+    async quoteCart(items: CartItem[], state: NigerianState | null, couponCodes: string[] = []): Promise<CartQuote> {
         const { data } = await api.post<CartQuote>("/shop/cart/quote", {
             items: items.map(({ productId, quantity, pickup }) => ({ productId, quantity, ...(pickup && { pickup }) })),
             ...(state && { state }),
+            ...(couponCodes.length > 0 && { couponCodes }),
         });
         return data;
     },

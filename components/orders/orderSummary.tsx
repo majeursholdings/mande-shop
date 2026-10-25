@@ -32,6 +32,8 @@ export default function OrderSummary({
 }) {
     const items = order.sellers.reduce((sum, part) => sum + part.itemsSubtotalKobo, 0);
     const delivery = order.sellers.reduce((sum, part) => sum + part.deliveryFeeKobo, 0);
+    const discount = order.sellers.reduce((sum, part) => sum + (part.discountKobo ?? 0), 0);
+    const codes = order.sellers.flatMap((part) => (part.coupon && part.discountKobo ? [part.coupon.code] : []));
     // Card refunds the platform has confirmed; the rest show as on their way
     const cardRefunded = order.refundedKobo - order.refundedToCreditKobo - order.refundPendingKobo;
     const collectingOnly = order.sellers.every((part) => part.lines.every((line) => line.pickup || line.status === "cancelled"));
@@ -118,6 +120,12 @@ export default function OrderSummary({
                         <dt className="text-mist-700">Items</dt>
                         <dd className="font-medium text-mist-950">{formatKobo(items)}</dd>
                     </div>
+                    {discount > 0 && (
+                        <div className="flex justify-between text-primary-800">
+                            <dt>Coupon {codes.join(", ")}</dt>
+                            <dd className="font-medium">-{formatKobo(discount)}</dd>
+                        </div>
+                    )}
                     <div className="flex justify-between">
                         <dt className="text-mist-700">Delivery</dt>
                         <dd className="font-medium text-mist-950">{delivery === 0 ? "Free" : formatKobo(delivery)}</dd>

@@ -57,7 +57,9 @@ export default function ReturnDialog({ order, part, onClose }: { order: Customer
     const chosen = lines.filter((line) => allowed(line) && (quantities[line.id] ?? 0) > 0);
     const refundKobo = chosen.reduce((sum, line) => {
         const quantity = quantities[line.id] ?? 0;
-        return sum + line.unitPriceKobo * quantity + (problem ? Math.floor((line.deliveryFeeKobo * quantity) / line.quantity) : 0);
+        // What was paid for what's coming back: less its share of a coupon, as the API works it out
+        const discount = Math.floor(((line.discountKobo ?? 0) * quantity) / line.quantity);
+        return sum + line.unitPriceKobo * quantity - discount + (problem ? Math.floor((line.deliveryFeeKobo * quantity) / line.quantity) : 0);
     }, 0);
 
     const fields: FormFieldConfig[] = [

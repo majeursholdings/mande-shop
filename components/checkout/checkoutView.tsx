@@ -26,6 +26,7 @@ import { formatKobo } from "@/lib/currency";
 import { queryKeys } from "@/lib/queryKeys";
 import { accountService } from "@/lib/services/accountService";
 import { checkoutService } from "@/lib/services/checkoutService";
+import CouponCodes from "./couponCodes";
 import { returnsService } from "@/lib/services/returnsService";
 import { shopService } from "@/lib/services/shopService";
 import type { Address } from "@/lib/types/account";
@@ -85,9 +86,10 @@ export default function CheckoutView() {
     const chosen = saved.find((address) => address.id === choice) ?? null;
     const state = (chosen ? chosen.state : newState || null) as NigerianState | null;
 
+    const [couponCodes, setCouponCodes] = useState<string[]>([]);
     const quote = useQuery({
-        queryKey: queryKeys.cart.quote(items, state),
-        queryFn: () => shopService.quoteCart(items, state),
+        queryKey: [...queryKeys.cart.quote(items, state), couponCodes],
+        queryFn: () => shopService.quoteCart(items, state, couponCodes),
         enabled: isClient && items.length > 0,
         placeholderData: (previous) => previous,
     });
@@ -133,7 +135,9 @@ export default function CheckoutView() {
                     saveAddress,
                 };
             }
-            const { order, checkoutUrl } = await checkoutService.start({ ...request, useCredit: creditKobo > 0 });
+            // Only codes that apply go with the order (the API refuses one that doesn't, rather than charge without it)
+            const applied = (quote.data?.coupons ?? []).filter((result) => result.status === "applied").map((result) => result.code);
+            const { order, checkoutUrl } = await checkoutService.start({ ...request, useCredit: creditKobo > 0, couponCodes: applied });
             void queryClient.invalidateQueries({ queryKey: queryKeys.customer.creditAll() });
             if (!checkoutUrl) {
                 // Paid with store credit: it's an order already
@@ -274,6 +278,12 @@ export default function CheckoutView() {
                         <dt className="text-mist-700">Items</dt>
                         <dd className="font-medium text-mist-950">{data ? formatKobo(data.itemsSubtotalKobo) : <Skeleton className="h-5 w-20" />}</dd>
                     </div>
+                    {!!data?.discountKobo && (
+                        <div className="flex justify-between text-primary-800">
+                            <dt>Coupons</dt>
+                            <dd className="font-medium">-{formatKobo(data.discountKobo)}</dd>
+                        </div>
+                    )}
                     <div className="flex justify-between">
                         <dt className="text-mist-700">Delivery</dt>
                         <dd className="font-medium text-mist-950">
@@ -297,6 +307,12 @@ export default function CheckoutView() {
                         </>
                     )}
                 </dl>
+                <CouponCodes
+                    codes={couponCodes}
+                    results={data?.coupons ?? []}
+                    sellerByCode={new Map((data?.sellers ?? []).flatMap((part) => (part.coupon ? [[part.coupon.code, part.seller.name] as const] : [])))}
+                    onChange={setCouponCodes}
+                />
                 {balanceKobo > 0 && (
                     <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-primary-200 bg-primary-50/50 p-3 text-sm">
                         <input type="checkbox" checked={useCredit} onChange={(event) => setUseCredit(event.target.checked)} className="mt-0.5 size-4 accent-secondary-700" />
