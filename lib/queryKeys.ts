@@ -22,6 +22,7 @@ export const queryKeys = {
         returnsAll: () => ["customer", "returns"] as const,
         credit: (page: number) => ["customer", "credit", page] as const,
         creditAll: () => ["customer", "credit"] as const,
+        rewards: (page: number) => ["customer", "rewards", page] as const,
     },
     cart: {
         quote: (items: unknown, state: string | null) => ["cart", "quote", items, state] as const,

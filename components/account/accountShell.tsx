@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect, usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Headset, LogOut, MapPin, Package, RotateCcw, Scale, ShieldCheck, Star, UserRound, type LucideIcon } from "lucide-react";
+import { Gift, Headset, LogOut, MapPin, Package, RotateCcw, Scale, ShieldCheck, Star, UserRound, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LOGIN_URL, withNext } from "@/constant/auth";
@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 const SECTIONS: { href: string; label: string; icon: LucideIcon }[] = [
     { href: "/account/orders", label: "Orders", icon: Package },
     { href: "/account/returns", label: "Returns & credit", icon: RotateCcw },
+    { href: "/account/rewards", label: "Rewards", icon: Gift },
     { href: "/account/reviews", label: "Reviews", icon: Star },
     { href: "/account", label: "Your details", icon: UserRound },
     { href: "/account/addresses", label: "Addresses", icon: MapPin },

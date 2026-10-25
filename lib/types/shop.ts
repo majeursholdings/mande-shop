@@ -86,6 +86,8 @@ export type CartQuotePart = {
     itemsSubtotalKobo: number;
     /** A coupon used on this seller's items, and what it took off. */
     coupon: { code: string } | null;
+    /** A personal coupon on MANDE products (its discount is part of discountKobo). */
+    personalCoupon?: { code: string; discountKobo: number } | null;
     discountKobo: number;
     deliveryFeeKobo: number | null;
     totalKobo: number | null;
@@ -319,3 +321,29 @@ export type CreditEntry = {
 };
 
 export type CreditPage = PageInfo & { balanceKobo: number; entries: CreditEntry[] };
+
+/** Affiliate rewards (/shop/me/rewards): their link, personal coupons, balance, the rules in force and their statement. */
+export type RewardsEntry = {
+    id: string;
+    kind: "earn" | "reverse" | "expire" | "spent" | "refund" | "adjustment" | "released";
+    status: "pending" | "available" | "void";
+    via: "link" | "coupon" | null;
+    amountKobo: number;
+    summary: string;
+    orderCode: string | null;
+    availableAt: string | null;
+    expiresAt: string | null;
+    at: string;
+};
+
+export type PersonalCoupon = { id: string; code: string; type: "percentage" | "fixed"; value: number; usesLeft: number | null; expiresAt: string | null };
+
+export type RewardsPage = PageInfo & {
+    enabled: boolean;
+    status: "active" | "suspended";
+    link: { code: string; url: string };
+    coupons: PersonalCoupon[];
+    balance: { availableKobo: number; pendingKobo: number };
+    rules: { linkRewardPercent: number; couponRewardPercent: number; attributionDays: number; creditExpiryDays: number };
+    entries: RewardsEntry[];
+};

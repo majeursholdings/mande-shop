@@ -28,6 +28,7 @@ import { accountService } from "@/lib/services/accountService";
 import { checkoutService } from "@/lib/services/checkoutService";
 import CouponCodes from "./couponCodes";
 import { returnsService } from "@/lib/services/returnsService";
+import { rewardsService } from "@/lib/services/rewardsService";
 import { shopService } from "@/lib/services/shopService";
 import type { Address } from "@/lib/types/account";
 import { cn } from "@/lib/utils";
@@ -43,9 +44,10 @@ type NewAddressValues = { name: string; phone: string; street: string; city: str
 // priced it, so the summary is fetched again and nothing is charged.
 //
 // Store credit (from returns) goes towards the order when they have some
-// (on by default, and they can turn it off). The card pays the rest; when
-// the credit covers it all, the order is placed at once and they go
-// straight to it.
+// (on by default, and they can turn it off), with their reward points
+// (affiliate credit, 1 point = ₦1) first, on MANDE products only. The card
+// pays the rest; when the credit covers it all, the order is placed at once
+// and they go straight to it.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STATE_OPTIONS = NIGERIAN_STATES.map((state) => ({ label: state === "FCT" ? "FCT (Abuja)" : state, value: state }));
@@ -62,6 +64,14 @@ function creditFor(totalKobo: number, balanceKobo: number): number {
     return totalKobo - balanceKobo >= MIN_CARD_KOBO ? balanceKobo : Math.max(0, totalKobo - MIN_CARD_KOBO);
 }
 
+/** Points first, on MANDE items only, then store credit (mirrors splitCredit in shop.checkout.ts). */
+function splitCredit(totalKobo: number, mandeItemsKobo: number, pointsKobo: number, creditKobo: number) {
+    const pointsRoom = Math.max(0, Math.min(pointsKobo, mandeItemsKobo));
+    const total = creditFor(totalKobo, pointsRoom + Math.max(0, creditKobo));
+    const points = Math.min(pointsRoom, total);
+    return { points, credit: total - points };
+}
+
 export default function CheckoutView() {
     const isClient = useIsClient();
     const router = useRouter();
@@ -75,6 +85,7 @@ export default function CheckoutView() {
     const [note, setNote] = useState("");
     const [useCredit, setUseCredit] = useState(true);
     const credit = useQuery({ queryKey: queryKeys.customer.credit(1), queryFn: () => returnsService.credit(1), enabled: !!customer });
+    const rewards = useQuery({ queryKey: queryKeys.customer.rewards(1), queryFn: () => rewardsService.get(1), enabled: !!customer });
     const methods = useForm<NewAddressValues>({
         mode: "onTouched",
         defaultValues: { name: "", phone: "", street: "", city: "", state: "", saveAddress: true },
@@ -139,11 +150,12 @@ export default function CheckoutView() {
             const applied = (quote.data?.coupons ?? []).filter((result) => result.status === "applied").map((result) => result.code);
             const { order, checkoutUrl } = await checkoutService.start({ ...request, useCredit: creditKobo > 0, couponCodes: applied });
             void queryClient.invalidateQueries({ queryKey: queryKeys.customer.creditAll() });
+            void queryClient.invalidateQueries({ queryKey: ["customer", "rewards"] });
             if (!checkoutUrl) {
                 // Paid with store credit: it's an order already
                 removeFromCart(...order.sellers.flatMap((part) => part.lines.map((line) => line.productId)));
                 void queryClient.invalidateQueries({ queryKey: ["customer", "orders"] });
-                toast.success("Order placed, paid with your store credit.");
+                toast.success("Order placed, paid with your points and store credit.");
                 router.push(orderHref(order.code));
                 return;
             }
@@ -152,6 +164,7 @@ export default function CheckoutView() {
         } catch (error) {
             if (error instanceof MandeApiError && error.code === "CREDIT_CHANGED") {
                 await queryClient.invalidateQueries({ queryKey: queryKeys.customer.creditAll() });
+                await queryClient.invalidateQueries({ queryKey: ["customer", "rewards"] });
                 toast.error("Your store credit changed. Check the summary and try again.");
             } else if (error instanceof MandeApiError && error.code === "CART_CHANGED") {
                 await queryClient.invalidateQueries({ queryKey: ["cart"] });
@@ -175,7 +188,12 @@ export default function CheckoutView() {
 
     const data = quote.data;
     const balanceKobo = credit.data?.balanceKobo ?? 0;
-    const creditKobo = useCredit && data?.totalKobo ? creditFor(data.totalKobo, balanceKobo) : 0;
+    const pointsKobo = rewards.data?.balance.availableKobo ?? 0;
+    const mandeItemsKobo = (data?.sellers ?? []).filter((part) => part.seller.kind === "mande").reduce((sum, part) => sum + part.itemsSubtotalKobo - part.discountKobo, 0);
+    const split = useCredit && data?.totalKobo ? splitCredit(data.totalKobo, mandeItemsKobo, pointsKobo, balanceKobo) : { points: 0, credit: 0 };
+    const creditKobo = split.points + split.credit;
+    // Points only count on MANDE products: offer them when there are some to spend on
+    const canUsePoints = pointsKobo > 0 && mandeItemsKobo > 0;
     const toPayKobo = data?.totalKobo ? data.totalKobo - creditKobo : null;
     const problems = data?.sellers.flatMap((part) => part.lines.filter((line) => line.problem)) ?? [];
 
@@ -296,10 +314,18 @@ export default function CheckoutView() {
                     </div>
                     {creditKobo > 0 && (
                         <>
-                            <div className="flex justify-between text-primary-800">
-                                <dt>Store credit</dt>
-                                <dd className="font-medium">-{formatKobo(creditKobo)}</dd>
-                            </div>
+                            {split.points > 0 && (
+                                <div className="flex justify-between text-primary-800">
+                                    <dt>Reward points</dt>
+                                    <dd className="font-medium">-{formatKobo(split.points)}</dd>
+                                </div>
+                            )}
+                            {split.credit > 0 && (
+                                <div className="flex justify-between text-primary-800">
+                                    <dt>Store credit</dt>
+                                    <dd className="font-medium">-{formatKobo(split.credit)}</dd>
+                                </div>
+                            )}
                             <div className="flex justify-between text-base">
                                 <dt className="font-semibold text-mist-950">To pay</dt>
                                 <dd className="font-bold text-mist-950">{formatKobo(toPayKobo ?? 0)}</dd>
@@ -310,18 +336,26 @@ export default function CheckoutView() {
                 <CouponCodes
                     codes={couponCodes}
                     results={data?.coupons ?? []}
-                    sellerByCode={new Map((data?.sellers ?? []).flatMap((part) => (part.coupon ? [[part.coupon.code, part.seller.name] as const] : [])))}
+                    sellerByCode={
+                        new Map(
+                            (data?.sellers ?? []).flatMap((part) => [
+                                ...(part.coupon ? [[part.coupon.code, part.seller.name] as const] : []),
+                                ...(part.personalCoupon ? [[part.personalCoupon.code, part.seller.name] as const] : []),
+                            ]),
+                        )
+                    }
                     onChange={setCouponCodes}
                 />
-                {balanceKobo > 0 && (
+                {(balanceKobo > 0 || canUsePoints) && (
                     <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-primary-200 bg-primary-50/50 p-3 text-sm">
                         <input type="checkbox" checked={useCredit} onChange={(event) => setUseCredit(event.target.checked)} className="mt-0.5 size-4 accent-secondary-700" />
                         <span className="flex flex-col">
                             <span className="flex items-center gap-1.5 font-semibold text-mist-950">
                                 <Wallet className="size-4 text-primary-700" aria-hidden />
-                                Use my store credit
+                                {balanceKobo > 0 && canUsePoints ? "Use my points and store credit" : canUsePoints ? "Use my reward points" : "Use my store credit"}
                             </span>
-                            <span className="text-mist-600">You have {formatKobo(balanceKobo)}. It never expires.</span>
+                            {canUsePoints && <span className="text-mist-600">{Math.floor(pointsKobo / 100).toLocaleString("en-NG")} points, on MANDE products. Points expire, so they go first.</span>}
+                            {balanceKobo > 0 && <span className="text-mist-600">{formatKobo(balanceKobo)} store credit. It never expires.</span>}
                         </span>
                     </label>
                 )}
@@ -344,7 +378,7 @@ export default function CheckoutView() {
                 </Button>
                 <p className="text-xs text-mist-500">
                     {toPayKobo === 0
-                        ? "Your store credit covers this order, so there's nothing to pay by card."
+                        ? "Your points and store credit cover this order, so there's nothing to pay by card."
                         : "You'll pay on our payment partner's secure page, then come back here. Your card details never reach MANDE."}
                 </p>
             </aside>

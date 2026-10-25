@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import type { CartItem } from "@/lib/cart";
+import { readReferral } from "@/constant/referral";
 import type { NigerianState } from "@/constant/shop";
 import type { CustomerOrder, CustomerOrderPage, PageInfo, ToReviewItem, WrittenReview } from "@/lib/types/shop";
 
@@ -29,6 +30,8 @@ export const checkoutService = {
             ...(note?.trim() && { note: note.trim() }),
             ...(useCredit && { useCredit: true }),
             ...(couponCodes?.length && { couponCodes }),
+            // The referral link they last opened, if any: the API decides whether it counts
+            ...readReferral(),
         });
         return data;
     },
