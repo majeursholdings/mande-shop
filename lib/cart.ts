@@ -2,7 +2,9 @@ import { NIGERIAN_STATES, type NigerianState } from "@/constant/shop";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The cart, kept in this browser's localStorage (SHOP_IMPLEMENTATION.md 10.2):
-// which products, how many, and whether they'll collect. Prices, stock and
+// which products (and which variant of each), how many, and whether they'll
+// collect. A product with variants can be in it more than once, a line per
+// variant, so lines are found by product and variant (`CartLineKey`). Prices, stock and
 // delivery are never kept here: the API prices the cart each time it's shown
 // (POST /shop/cart/quote), and again at checkout. Components read it with
 // useSyncExternalStore (hooks/useCart.ts), and only change it in event
@@ -12,7 +14,17 @@ import { NIGERIAN_STATES, type NigerianState } from "@/constant/shop";
 // and checkout all price delivery for the same place.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type CartItem = { productId: string; slug: string; quantity: number; pickup?: boolean };
+/** `variantId`: which variant, for a product that has them (carts saved before variants have none). */
+export type CartItem = { productId: string; variantId?: string; slug: string; quantity: number; pickup?: boolean };
+
+/** What picks out one line of the cart: the product, and its variant if it has them. */
+export type CartLineKey = { productId: string; variantId?: string | null };
+
+export const isSameLine = (item: CartLineKey, key: CartLineKey) => item.productId === key.productId && (item.variantId ?? null) === (key.variantId ?? null);
+
+/** The cart lines as the API takes them (POST /shop/cart/quote and /shop/checkout). */
+export const cartItemsForApi = (items: CartItem[]) =>
+    items.map(({ productId, variantId, quantity, pickup }) => ({ productId, ...(variantId && { variantId }), quantity, ...(pickup && { pickup }) }));
 
 const CART_KEY = "mande_shop_cart_v1";
 const STATE_KEY = "mande_shop_delivery_state";
@@ -54,11 +66,15 @@ function writeStorage(key: string, value: string | null) {
     notify();
 }
 
+const OBJECT_ID = /^[a-f\d]{24}$/i;
+
+const isId = (value: unknown) => typeof value === "string" && OBJECT_ID.test(value);
+
 const isCartItem = (value: unknown): value is CartItem =>
     !!value &&
     typeof value === "object" &&
-    typeof (value as CartItem).productId === "string" &&
-    /^[a-f\d]{24}$/i.test((value as CartItem).productId) &&
+    isId((value as CartItem).productId) &&
+    ((value as CartItem).variantId === undefined || isId((value as CartItem).variantId)) &&
     typeof (value as CartItem).slug === "string" &&
     Number.isInteger((value as CartItem).quantity) &&
     (value as CartItem).quantity >= 1;
@@ -89,28 +105,37 @@ function saveCart(items: CartItem[]) {
 
 const clamp = (quantity: number, max: number | null) => Math.max(1, Math.min(quantity, max ?? CART_MAX_QUANTITY, CART_MAX_QUANTITY));
 
-/** Adds `quantity` (on top of any already in the cart), up to `max` (the stock), or false when the cart is full. */
-export function addToCart(product: { productId: string; slug: string }, quantity: number, max: number | null = null): boolean {
+/**
+ * Adds `quantity` (on top of any already in the cart for the same product
+ * and variant), up to `max` (the stock), or false when the cart is full. A
+ * different variant of the same product is a line of its own.
+ */
+export function addToCart(product: { productId: string; slug: string; variantId?: string | null }, quantity: number, max: number | null = null): boolean {
     const items = getCartSnapshot();
-    const existing = items.find((item) => item.productId === product.productId);
+    const existing = items.find((item) => isSameLine(item, product));
     if (!existing && items.length >= CART_MAX_LINES) return false;
     saveCart(
         existing
-            ? items.map((item) => (item.productId === product.productId ? { ...item, quantity: clamp(item.quantity + quantity, max) } : item))
-            : [...items, { productId: product.productId, slug: product.slug, quantity: clamp(quantity, max) }],
+            ? items.map((item) => (item === existing ? { ...item, quantity: clamp(item.quantity + quantity, max) } : item))
+            : [...items, { productId: product.productId, ...(product.variantId && { variantId: product.variantId }), slug: product.slug, quantity: clamp(quantity, max) }],
     );
     return true;
 }
 
-export function setCartQuantity(productId: string, quantity: number, max: number | null = null) {
-    saveCart(getCartSnapshot().map((item) => (item.productId === productId ? { ...item, quantity: clamp(quantity, max) } : item)));
+export function setCartQuantity(line: CartLineKey, quantity: number, max: number | null = null) {
+    saveCart(getCartSnapshot().map((item) => (isSameLine(item, line) ? { ...item, quantity: clamp(quantity, max) } : item)));
 }
 
-export function setCartPickup(productId: string, pickup: boolean) {
-    saveCart(getCartSnapshot().map((item) => (item.productId === productId ? { ...item, pickup } : item)));
+export function setCartPickup(line: CartLineKey, pickup: boolean) {
+    saveCart(getCartSnapshot().map((item) => (isSameLine(item, line) ? { ...item, pickup } : item)));
 }
 
-export function removeFromCart(...productIds: string[]) {
+export function removeFromCart(...lines: CartLineKey[]) {
+    saveCart(getCartSnapshot().filter((item) => !lines.some((line) => isSameLine(item, line))));
+}
+
+/** Takes every line of these products out of the cart, whatever their variant (a product that's gone, or one just paid for). */
+export function removeProductsFromCart(...productIds: string[]) {
     saveCart(getCartSnapshot().filter((item) => !productIds.includes(item.productId)));
 }
 

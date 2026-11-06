@@ -11,7 +11,7 @@ import { FormCancelButton, PRIMARY_BUTTON_CLASS } from "@/components/customForm/
 import Pagination from "@/components/products/pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ORDERS_URL, RETURN_REASON_LABELS, RETURN_STATUS_LABELS, RETURN_STATUS_TONES, RETURNS_URL, orderHref } from "@/constant/orders";
+import { ORDERS_URL, RETURN_REASON_LABELS, RETURN_STATUS_LABELS, RETURN_STATUS_TONES, RETURNS_URL, lineName, orderHref } from "@/constant/orders";
 import { parsePage } from "@/constant/shop";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { getErrorMessage } from "@/lib/api";
@@ -156,7 +156,7 @@ function ReturnCard({ entry }: { entry: CustomerReturn }) {
                             )}
                         </div>
                         <span className="flex-1 text-mist-800">
-                            {line.quantity} × {line.title}
+                            {line.quantity} × {lineName(line)}
                         </span>
                     </li>
                 ))}

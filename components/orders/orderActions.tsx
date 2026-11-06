@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { FormCancelButton, PRIMARY_BUTTON_CLASS } from "@/components/customForm/formButtons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { lineName } from "@/constant/orders";
 import { getErrorMessage } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { checkoutService } from "@/lib/services/checkoutService";
@@ -146,7 +147,7 @@ export function LineReview({ order, part, line }: { order: CustomerOrder; part: 
             </button>
             {reviewing && (
                 <ReviewDialog
-                    title={`Review ${line.title}`}
+                    title={`Review ${lineName(line)}`}
                     description="Tell other buyers about the quality, the finish and whether it matched the photos."
                     onClose={() => setReviewing(false)}
                     onSubmit={async (rating, body) => {

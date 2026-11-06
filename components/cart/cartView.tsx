@@ -10,7 +10,8 @@ import { LOGIN_URL, withNext } from "@/constant/auth";
 import { useCart, useDeliveryState } from "@/hooks/useCart";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { useIsClient } from "@/hooks/useIsClient";
-import { removeFromCart, setCartPickup, setCartQuantity } from "@/lib/cart";
+import { removeFromCart, removeProductsFromCart, setCartPickup, setCartQuantity } from "@/lib/cart";
+import { productHref } from "@/constant/shop";
 import { formatKobo } from "@/lib/currency";
 import { queryKeys } from "@/lib/queryKeys";
 import { accountService } from "@/lib/services/accountService";
@@ -25,7 +26,9 @@ import StateSelect from "./stateSelect";
 // state (or the signed-in customer's default address, until they choose).
 // Products that no longer exist are dropped from the cart as the price comes
 // back; lines that can't be bought say why, and keep checkout closed until
-// they're sorted.
+// they're sorted. A product can be in it more than once, a line per
+// variant: each quoted line names the variant it was sent with, so it's
+// changed and removed by product and variant.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PROBLEMS: Record<CartLineProblem, string> = {
@@ -34,6 +37,8 @@ const PROBLEMS: Record<CartLineProblem, string> = {
     not_enough_stock: "Not that many left. Lower the quantity to check out.",
     no_delivery: "Not delivered to this state. Choose collection if it's offered, or remove it.",
     no_pickup: "Collection isn't offered for this product any more.",
+    // No variant, or one that isn't on sale any more
+    choose_variant: "This product comes in options, and this one can't be bought. Remove it, then add the one you want from the product page.",
 };
 
 const CHECKOUT_URL = "/checkout";
@@ -51,7 +56,7 @@ export default function CartView() {
         queryFn: async () => {
             const result = await shopService.quoteCart(items, state);
             // Products that are gone for good leave the cart
-            if (result.missingProductIds.length) removeFromCart(...result.missingProductIds);
+            if (result.missingProductIds.length) removeProductsFromCart(...result.missingProductIds);
             return result;
         },
         enabled: items.length > 0,
@@ -99,7 +104,7 @@ export default function CartView() {
                             </div>
                             <ul className="flex flex-col divide-y divide-mist-100">
                                 {part.lines.map((line) => (
-                                    <CartLine key={line.productId} line={line} state={state} />
+                                    <CartLine key={`${line.productId}:${line.variantId ?? ""}`} line={line} state={state} />
                                 ))}
                             </ul>
                         </section>
@@ -147,11 +152,16 @@ export default function CartView() {
     );
 }
 
+/** The product page, opened on the line's variant. */
+const lineHref = (line: CartQuoteLine) => `${productHref(line.slug)}${line.variantId ? `?variant=${encodeURIComponent(line.variantId)}` : ""}`;
+
 function CartLine({ line, state }: { line: CartQuoteLine; state: string | null }) {
     const max = line.maxQuantity;
+    const key = { productId: line.productId, variantId: line.variantId };
+    const name = line.variantLabel ? `${line.title} (${line.variantLabel})` : line.title;
     return (
         <li className="flex gap-3 py-4 first:pt-1 last:pb-1 sm:gap-4">
-            <Link href={`/p/${line.slug}`} className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-mist-100 sm:size-24">
+            <Link href={lineHref(line)} className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-mist-100 sm:size-24">
                 {line.image ? (
                     <Image src={line.image.url} alt={line.image.alt || line.title} fill sizes="96px" className="object-cover" />
                 ) : (
@@ -163,19 +173,20 @@ function CartLine({ line, state }: { line: CartQuoteLine; state: string | null }
             <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <Link href={`/p/${line.slug}`} className="line-clamp-2 text-sm font-medium text-mist-950 hover:text-primary-700">
+                        <Link href={lineHref(line)} className="line-clamp-2 text-sm font-medium text-mist-950 hover:text-primary-700">
                             {line.title}
                         </Link>
+                        {line.variantLabel && <p className="text-sm text-mist-700">{line.variantLabel}</p>}
                         <p className="text-sm text-mist-500">{formatKobo(line.unitPriceKobo)} each</p>
                     </div>
                     <p className="shrink-0 text-sm font-semibold text-mist-950">{formatKobo(line.lineTotalKobo)}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex h-9 items-center rounded-button border border-border" role="group" aria-label={`Quantity of ${line.title}`}>
+                    <div className="flex h-9 items-center rounded-button border border-border" role="group" aria-label={`Quantity of ${name}`}>
                         <button
                             type="button"
-                            onClick={() => setCartQuantity(line.productId, line.quantity - 1, max)}
+                            onClick={() => setCartQuantity(key, line.quantity - 1, max)}
                             disabled={line.quantity <= 1}
                             aria-label="One fewer"
                             className="flex size-9 cursor-pointer items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
@@ -185,7 +196,7 @@ function CartLine({ line, state }: { line: CartQuoteLine; state: string | null }
                         <span className="min-w-7 text-center text-sm tabular-nums">{line.quantity}</span>
                         <button
                             type="button"
-                            onClick={() => setCartQuantity(line.productId, line.quantity + 1, max)}
+                            onClick={() => setCartQuantity(key, line.quantity + 1, max)}
                             disabled={max !== null && line.quantity >= max}
                             aria-label="One more"
                             className="flex size-9 cursor-pointer items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
@@ -195,7 +206,7 @@ function CartLine({ line, state }: { line: CartQuoteLine; state: string | null }
                     </div>
                     <button
                         type="button"
-                        onClick={() => removeFromCart(line.productId)}
+                        onClick={() => removeFromCart(key)}
                         className="flex cursor-pointer items-center gap-1 text-sm text-mist-500 hover:text-error-700"
                     >
                         <Trash2 className="size-3.5" aria-hidden />
@@ -208,7 +219,7 @@ function CartLine({ line, state }: { line: CartQuoteLine; state: string | null }
                         <input
                             type="checkbox"
                             checked={line.pickup.chosen}
-                            onChange={(event) => setCartPickup(line.productId, event.target.checked)}
+                            onChange={(event) => setCartPickup(key, event.target.checked)}
                             className="mt-0.5 size-4 accent-secondary-700"
                         />
                         <span>Collect it free from {line.pickup.address}</span>
@@ -224,6 +235,14 @@ function CartLine({ line, state }: { line: CartQuoteLine; state: string | null }
                 {line.problem && (
                     <p role="alert" className="text-sm font-medium text-error-700">
                         {line.problem === "not_enough_stock" && max !== null ? `Only ${max} left. Lower the quantity to check out.` : PROBLEMS[line.problem]}
+                        {line.problem === "choose_variant" && (
+                            <>
+                                {" "}
+                                <Link href={productHref(line.slug)} className="underline hover:text-error-900">
+                                    Choose options
+                                </Link>
+                            </>
+                        )}
                     </p>
                 )}
             </div>

@@ -26,6 +26,9 @@ export const PART_STATUS_TONES: Record<OrderPartStatus, string> = {
 export const ORDERS_URL = "/account/orders";
 export const orderHref = (code: string) => `${ORDERS_URL}/${encodeURIComponent(code)}`;
 
+/** A line's name with its variant: "Oak chair (Red / Large)" (mirrors lineName in mande-backend's shop.variants.ts). */
+export const lineName = (line: { title: string; variantLabel?: string | null }) => (line.variantLabel ? `${line.title} (${line.variantLabel})` : line.title);
+
 // ─── Returns (mirrors RETURN_REASONS and RETURN_STATUSES in mande-backend/src/constants/shop.ts) ───
 
 export const RETURN_REASONS: { value: ReturnReason; label: string; hint: string }[] = [

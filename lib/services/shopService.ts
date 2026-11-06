@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { CartItem } from "@/lib/cart";
+import { cartItemsForApi, type CartItem } from "@/lib/cart";
 import type { NigerianState } from "@/constant/shop";
 import type { CartQuote, WishlistPage } from "@/lib/types/shop";
 
@@ -13,7 +13,7 @@ export const shopService = {
     /** `couponCodes`: codes typed at checkout, each matched to its seller (one per seller). */
     async quoteCart(items: CartItem[], state: NigerianState | null, couponCodes: string[] = []): Promise<CartQuote> {
         const { data } = await api.post<CartQuote>("/shop/cart/quote", {
-            items: items.map(({ productId, quantity, pickup }) => ({ productId, quantity, ...(pickup && { pickup }) })),
+            items: cartItemsForApi(items),
             ...(state && { state }),
             ...(couponCodes.length > 0 && { couponCodes }),
         });

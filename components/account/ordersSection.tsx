@@ -9,7 +9,7 @@ import { LineReview, PartActions } from "@/components/orders/orderActions";
 import OrderSummary, { PartStatusBadge, formatOrderDate } from "@/components/orders/orderSummary";
 import Pagination from "@/components/products/pagination";
 import { PRIMARY_BUTTON_CLASS } from "@/components/customForm/formButtons";
-import { ORDERS_URL, orderHref } from "@/constant/orders";
+import { ORDERS_URL, lineName, orderHref } from "@/constant/orders";
 import { parsePage } from "@/constant/shop";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { formatKobo } from "@/lib/currency";
@@ -73,7 +73,7 @@ export default function OrdersSection() {
                                                 <span className="font-semibold text-mist-950">{order.code}</span>
                                                 <span className="text-sm font-semibold text-mist-950">{formatKobo(order.totalKobo)}</span>
                                             </div>
-                                            <span className="line-clamp-1 text-sm text-mist-700">{lines.map((line) => `${line.quantity} × ${line.title}`).join(", ")}</span>
+                                            <span className="line-clamp-1 text-sm text-mist-700">{lines.map((line) => `${line.quantity} × ${lineName(line)}`).join(", ")}</span>
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <span className="text-xs text-mist-500">{formatOrderDate(order.paidAt ?? order.createdAt)}</span>
                                                 {order.sellers.map((part) => (

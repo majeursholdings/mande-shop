@@ -33,8 +33,8 @@ export default function CheckoutComplete() {
         queryKey: queryKeys.customer.checkout(reference),
         queryFn: async () => {
             const order = await checkoutService.confirm(reference);
-            // What they paid for leaves the cart (anything added since stays)
-            if (order.status === "paid") removeFromCart(...order.sellers.flatMap((part) => part.lines.map((line) => line.productId)));
+            // What they paid for leaves the cart: exactly those lines (other products and variants added since stay)
+            if (order.status === "paid") removeFromCart(...order.sellers.flatMap((part) => part.lines.map((line) => ({ productId: line.productId, variantId: line.variantId }))));
             return order;
         },
         enabled: !!customer && valid,

@@ -71,6 +71,7 @@ export default function OrderSummary({
                                         ) : (
                                             <span className="line-clamp-2 text-sm font-medium text-mist-950">{line.title}</span>
                                         )}
+                                        {line.variantLabel && <span className="text-sm text-mist-700">{line.variantLabel}</span>}
                                         <span className="text-sm text-mist-500">
                                             {line.quantity} × {formatKobo(line.unitPriceKobo)}
                                             {line.pickup ? ", collecting" : ""}

@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { CartItem } from "@/lib/cart";
+import { cartItemsForApi, type CartItem } from "@/lib/cart";
 import { readReferral } from "@/constant/referral";
 import type { NigerianState } from "@/constant/shop";
 import type { CustomerOrder, CustomerOrderPage, PageInfo, ToReviewItem, WrittenReview } from "@/lib/types/shop";
@@ -25,7 +25,7 @@ export const checkoutService = {
     async start(request: CheckoutRequest): Promise<{ order: CustomerOrder; checkoutUrl: string | null }> {
         const { items, note, useCredit, couponCodes, ...where } = request;
         const { data } = await api.post<{ order: CustomerOrder; checkoutUrl: string | null }>("/shop/checkout", {
-            items: items.map(({ productId, quantity, pickup }) => ({ productId, quantity, ...(pickup && { pickup }) })),
+            items: cartItemsForApi(items),
             ...where,
             ...(note?.trim() && { note: note.trim() }),
             ...(useCredit && { useCredit: true }),

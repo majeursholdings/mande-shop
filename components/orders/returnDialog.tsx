@@ -13,7 +13,7 @@ import { FormCancelButton, PRIMARY_BUTTON_CLASS } from "@/components/customForm/
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { legalHref } from "@/constant/legal";
-import { RETURN_MAX_PHOTOS, RETURN_REASONS, RETURNS_URL } from "@/constant/orders";
+import { RETURN_MAX_PHOTOS, RETURN_REASONS, RETURNS_URL, lineName } from "@/constant/orders";
 import { getErrorMessage } from "@/lib/api";
 import { formatKobo } from "@/lib/currency";
 import { queryKeys } from "@/lib/queryKeys";
@@ -141,7 +141,7 @@ export default function ReturnDialog({ order, part, onClose }: { order: Customer
                             <div key={line.id} className={cn("flex items-center gap-3 rounded-xl border p-3", quantity > 0 && !blocked ? "border-secondary-700 bg-secondary-50/40" : "border-mist-200", blocked && "opacity-60")}>
                                 <input
                                     type="checkbox"
-                                    aria-label={`Return ${line.title}`}
+                                    aria-label={`Return ${lineName(line)}`}
                                     checked={quantity > 0 && !blocked}
                                     disabled={blocked}
                                     onChange={(event) => setQuantities((current) => ({ ...current, [line.id]: event.target.checked ? line.returnableQuantity : 0 }))}
@@ -158,12 +158,13 @@ export default function ReturnDialog({ order, part, onClose }: { order: Customer
                                 </div>
                                 <div className="flex min-w-0 flex-1 flex-col text-sm">
                                     <span className="line-clamp-1 font-medium text-mist-950">{line.title}</span>
+                                    {line.variantLabel && <span className="line-clamp-1 text-mist-700">{line.variantLabel}</span>}
                                     <span className="text-mist-500">{formatKobo(line.unitPriceKobo)} each</span>
                                     {!line.changeOfMindReturns && <span className="text-xs text-warning-800">Returns only if there&apos;s a problem with it</span>}
                                 </div>
                                 {line.returnableQuantity > 1 && quantity > 0 && !blocked && (
                                     <select
-                                        aria-label={`How many ${line.title}`}
+                                        aria-label={`How many ${lineName(line)}`}
                                         value={quantity}
                                         onChange={(event) => setQuantities((current) => ({ ...current, [line.id]: Number(event.target.value) }))}
                                         className="h-9 rounded-button border border-input bg-white px-2 text-sm"

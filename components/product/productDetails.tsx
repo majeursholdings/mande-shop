@@ -1,50 +1,17 @@
 import Link from "next/link";
-import { Clock, PackageCheck, PackageX } from "lucide-react";
 import { categoryHref, getShopSubcategory, sellerHref, subcategoryHref } from "@/constant/shop";
-import { formatKobo } from "@/lib/currency";
 import { getProductReviews } from "@/lib/catalogue/products";
 import { SHOP_URL } from "@/lib/site";
 import type { ProductDetail } from "@/lib/types/shop";
 import Breadcrumbs, { type Crumb } from "@/components/layout/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Suspense } from "react";
-import ProductPurchase from "@/components/cart/productPurchase";
 import RelatedProducts, { RelatedProductsSkeleton } from "./relatedProducts";
 import ReportProduct from "./reportProduct";
 import ReviewsSection, { ReviewsSectionSkeleton } from "./reviewsSection";
 import SellerCard from "./sellerCard";
-import TrustPanel from "./trustPanel";
-import ProductGallery from "./productGallery";
+import { VariantAvailability, VariantGallery, VariantPicker, VariantPrice, VariantProvider, VariantPurchase, VariantTrustPanel } from "./productVariants";
 import RatingSummary from "./ratingSummary";
-
-/** How many are left before the page says so ("Only 3 left"). */
-const LOW_STOCK = 5;
-
-function Availability({ product }: { product: ProductDetail }) {
-    if (product.stock === null) {
-        return (
-            <p className="flex items-center gap-2 text-sm text-neutral-700">
-                <Clock className="size-4 text-primary-700" aria-hidden />
-                Made to order
-                {product.leadTimeDays ? `, ready in about ${product.leadTimeDays} ${product.leadTimeDays === 1 ? "day" : "days"}` : ""}
-            </p>
-        );
-    }
-    if (product.stock === 0) {
-        return (
-            <p className="flex items-center gap-2 text-sm font-medium text-error-700">
-                <PackageX className="size-4" aria-hidden />
-                Sold out
-            </p>
-        );
-    }
-    return (
-        <p className="flex items-center gap-2 text-sm text-neutral-700">
-            <PackageCheck className="size-4 text-primary-700" aria-hidden />
-            {product.stock <= LOW_STOCK ? `In stock, only ${product.stock} left` : "In stock"}
-        </p>
-    );
-}
 
 /** How many reviews go in the product data: the first page of /p/[slug]/reviews. */
 const JSON_LD_REVIEWS = 10;
@@ -70,9 +37,16 @@ async function ProductJsonLd({ product }: { product: ProductDetail }) {
         image: product.images.map((image) => image.url),
         sku: product.id,
         url: `${SHOP_URL}/p/${product.slug}`,
+        // With variants at different prices, the range they cost
         offers: {
-            "@type": "Offer",
-            price: (product.priceKobo / 100).toFixed(2),
+            ...(product.priceMaxKobo !== null && product.priceMaxKobo > product.priceKobo
+                ? {
+                      "@type": "AggregateOffer",
+                      lowPrice: (product.priceKobo / 100).toFixed(2),
+                      highPrice: (product.priceMaxKobo / 100).toFixed(2),
+                      offerCount: product.variants.length,
+                  }
+                : { "@type": "Offer", price: (product.priceKobo / 100).toFixed(2) }),
             priceCurrency: "NGN",
             availability:
                 product.stock === null
@@ -119,41 +93,59 @@ export default function ProductDetails({ product }: { product: ProductDetail }) 
             </Suspense>
             <Breadcrumbs items={crumbs} />
 
-            <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-                <ProductGallery images={product.images} title={product.title} />
+            {/* The gallery, price, stock, "Add to cart" and returns follow the variant chosen */}
+            <VariantProvider
+                product={{
+                    id: product.id,
+                    slug: product.slug,
+                    title: product.title,
+                    priceKobo: product.priceKobo,
+                    priceMaxKobo: product.priceMaxKobo,
+                    stock: product.stock,
+                    leadTimeDays: product.leadTimeDays,
+                    images: product.images,
+                    changeOfMindReturns: product.changeOfMindReturns,
+                    options: product.options ?? [],
+                    variants: product.variants ?? [],
+                }}
+            >
+                <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+                    <VariantGallery />
 
-                <div className="flex flex-col gap-5">
-                    <div className="flex flex-col gap-2">
-                        <h1 className="text-2xl tracking-tight text-neutral-900 md:text-3xl">{product.title}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Sold by{" "}
-                            <Link href={sellerHref(product.seller.slug)} className="font-medium text-primary-700 hover:underline">
-                                {product.seller.name}
-                            </Link>
-                        </p>
-                        <a href="#reviews" className="self-start rounded outline-none hover:opacity-80 focus-visible:ring-3 focus-visible:ring-ring/50">
-                            <RatingSummary rating={product.rating} />
-                        </a>
+                    <div className="flex flex-col gap-5">
+                        <div className="flex flex-col gap-2">
+                            <h1 className="text-2xl tracking-tight text-neutral-900 md:text-3xl">{product.title}</h1>
+                            <p className="text-sm text-muted-foreground">
+                                Sold by{" "}
+                                <Link href={sellerHref(product.seller.slug)} className="font-medium text-primary-700 hover:underline">
+                                    {product.seller.name}
+                                </Link>
+                            </p>
+                            <a href="#reviews" className="self-start rounded outline-none hover:opacity-80 focus-visible:ring-3 focus-visible:ring-ring/50">
+                                <RatingSummary rating={product.rating} />
+                            </a>
+                        </div>
+
+                        <VariantPrice />
+                        <VariantPicker />
+                        <VariantAvailability />
+                        <VariantPurchase />
+
+                        <SellerCard seller={product.seller} />
+                        <VariantTrustPanel />
+
+                        {product.description && (
+                            <section aria-labelledby="description-heading" className="flex flex-col gap-2 border-t border-border pt-5">
+                                <h2 id="description-heading" className="text-lg font-medium text-neutral-900">
+                                    About this product
+                                </h2>
+                                <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-700">{product.description}</p>
+                            </section>
+                        )}
+                        <ReportProduct slug={product.slug} title={product.title} />
                     </div>
-
-                    <p className="text-3xl font-semibold text-neutral-900">{formatKobo(product.priceKobo)}</p>
-                    <Availability product={product} />
-                    <ProductPurchase product={{ id: product.id, slug: product.slug, title: product.title, stock: product.stock }} />
-
-                    <SellerCard seller={product.seller} />
-                    <TrustPanel changeOfMindReturns={product.changeOfMindReturns !== false} />
-
-                    {product.description && (
-                        <section aria-labelledby="description-heading" className="flex flex-col gap-2 border-t border-border pt-5">
-                            <h2 id="description-heading" className="text-lg font-medium text-neutral-900">
-                                About this product
-                            </h2>
-                            <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-700">{product.description}</p>
-                        </section>
-                    )}
-                    <ReportProduct slug={product.slug} title={product.title} />
                 </div>
-            </div>
+            </VariantProvider>
 
             <Suspense fallback={<ReviewsSectionSkeleton />}>
                 <ReviewsSection slug={product.slug} />

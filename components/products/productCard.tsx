@@ -9,6 +9,7 @@ import CardAddToCart from "@/components/cart/cardAddToCart";
 export default function ProductCard({ product }: { product: ProductCardData }) {
     const soldOut = product.stock === 0;
     const madeToOrder = product.stock === null;
+    const priceRange = product.priceMaxKobo !== null && product.priceMaxKobo > product.priceKobo;
 
     return (
         <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-white transition-shadow duration-300 hover:shadow-md">
@@ -60,8 +61,13 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
                     </p>
                 )}
 
-                <p className="mt-auto pt-2 text-base font-semibold text-neutral-900">{formatKobo(product.priceKobo)}</p>
-                <CardAddToCart product={{ id: product.id, slug: product.slug, title: product.title, stock: product.stock }} />
+                <p className="mt-auto pt-2 text-base font-semibold text-neutral-900">
+                    {priceRange && <span className="text-sm font-normal text-muted-foreground">From </span>}
+                    {formatKobo(product.priceKobo)}
+                </p>
+                <CardAddToCart
+                    product={{ id: product.id, slug: product.slug, title: product.title, stock: product.stock, hasVariants: (product.priceMaxKobo ?? null) !== null }}
+                />
             </div>
         </article>
     );

@@ -152,8 +152,8 @@ export default function CheckoutView() {
             void queryClient.invalidateQueries({ queryKey: queryKeys.customer.creditAll() });
             void queryClient.invalidateQueries({ queryKey: ["customer", "rewards"] });
             if (!checkoutUrl) {
-                // Paid with store credit: it's an order already
-                removeFromCart(...order.sellers.flatMap((part) => part.lines.map((line) => line.productId)));
+                // Paid with store credit: it's an order already, of exactly the lines sent
+                removeFromCart(...request.items);
                 void queryClient.invalidateQueries({ queryKey: ["customer", "orders"] });
                 toast.success("Order placed, paid with your points and store credit.");
                 router.push(orderHref(order.code));
@@ -267,7 +267,7 @@ export default function CheckoutView() {
                     <ul className="flex flex-col gap-3">
                         {data.sellers.flatMap((part) =>
                             part.lines.map((line) => (
-                                <li key={line.productId} className="flex gap-3">
+                                <li key={`${line.productId}:${line.variantId ?? ""}`} className="flex gap-3">
                                     <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-mist-100">
                                         {line.image ? (
                                             <Image src={line.image.url} alt={line.image.alt || line.title} fill sizes="48px" className="object-cover" />
@@ -279,6 +279,7 @@ export default function CheckoutView() {
                                     </div>
                                     <div className="flex min-w-0 flex-1 flex-col text-sm">
                                         <span className="line-clamp-1 font-medium text-mist-950">{line.title}</span>
+                                        {line.variantLabel && <span className="line-clamp-1 text-mist-700">{line.variantLabel}</span>}
                                         <span className="text-mist-500">
                                             {line.quantity} × {formatKobo(line.unitPriceKobo)}
                                             {line.pickup.chosen ? ", collecting" : ""}

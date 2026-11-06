@@ -12,7 +12,10 @@ export type ProductCardData = {
     slug: string;
     title: string;
     image: { url: string; alt?: string } | null;
+    /** With variants, the lowest price; priceMaxKobo is the highest (null without variants). */
     priceKobo: number;
+    /** When it's above priceKobo the card says "From ₦X". */
+    priceMaxKobo: number | null;
     category: string;
     subcategory: string;
     rating: { average: number; count: number };
@@ -25,13 +28,39 @@ export type ProductCardData = {
 /** GET /shop/products */
 export type ProductPage = PageInfo & { products: ProductCardData[] };
 
-/** One listed product, from GET /shop/products/:slug. */
+/** One option a customer picks a variant by, e.g. { name: "Color", values: ["Red", "Blue"] }. */
+export type ProductOption = { name: string; values: string[] };
+
+/** One combination of option values the seller sells, with its own price, stock and photos. */
+export type ProductVariant = {
+    id: string;
+    /** One per option, in the options' order. */
+    values: string[];
+    /** "Red / Single" */
+    label: string;
+    priceKobo: number;
+    /** null when made to order */
+    stock: number | null;
+    leadTimeDays: number | null;
+    images: { url: string; alt: string }[];
+    changeOfMindReturns: boolean;
+};
+
+/**
+ * One listed product, from GET /shop/products/:slug. With variants, its own
+ * priceKobo is the lowest variant price, stock the total (null when any is
+ * made to order) and leadTimeDays the longest.
+ */
 export type ProductDetail = Omit<ProductCardData, "image" | "seller"> & {
     description: string;
     images: { url: string; alt: string }[];
     listedAt: string | null;
     /** False: returned only with a problem (the seller says so, or it's made to order). */
     changeOfMindReturns: boolean;
+    /** Empty without variants. */
+    options: ProductOption[];
+    /** The variants on sale (not every combination need exist); empty without variants. */
+    variants: ProductVariant[];
     seller: {
         slug: string;
         name: string;
@@ -60,10 +89,14 @@ export type WishlistEntry = {
 export type WishlistPage = PageInfo & { items: WishlistEntry[] };
 
 /** What's wrong with a cart line, if anything (POST /shop/cart/quote). */
-export type CartLineProblem = "unavailable" | "sold_out" | "not_enough_stock" | "no_delivery" | "no_pickup";
+export type CartLineProblem = "unavailable" | "sold_out" | "not_enough_stock" | "no_delivery" | "no_pickup" | "choose_variant";
 
+/** Price, stock, lead time and image are the variant's when there is one. */
 export type CartQuoteLine = {
     productId: string;
+    /** As the cart sent it, so a line matches its cart item even when the variant is gone. */
+    variantId: string | null;
+    variantLabel: string | null;
     slug: string;
     title: string;
     image: { url: string; alt?: string } | null;
@@ -120,6 +153,9 @@ export type OrderLine = {
     productId: string;
     slug: string | null;
     title: string;
+    /** The variant bought, and its label ("Red / Single"); null without variants. */
+    variantId: string | null;
+    variantLabel: string | null;
     image: { url: string; alt?: string } | null;
     unitPriceKobo: number;
     quantity: number;
@@ -291,7 +327,7 @@ export type CustomerReturn = {
     refundMethod: RefundMethod;
     /** What it refunds: the items, plus their delivery for a problem. */
     amountKobo: number;
-    lines: { lineId: string; title: string; image: { url: string; alt?: string } | null; unitPriceKobo: number; quantity: number; deliveryRefundKobo: number }[];
+    lines: { lineId: string; title: string; variantLabel: string | null; image: { url: string; alt?: string } | null; unitPriceKobo: number; quantity: number; deliveryRefundKobo: number }[];
     /** The seller's: where and how to send it back. */
     instructions: string | null;
     rejectReason: string | null;

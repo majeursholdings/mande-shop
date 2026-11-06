@@ -13,6 +13,7 @@ import { FormSubmitButton, PRIMARY_BUTTON_CLASS } from "@/components/customForm/
 import { Skeleton } from "@/components/ui/skeleton";
 import { LOGIN_URL, withNext } from "@/constant/auth";
 import { LEGAL_URL, SUPPORT_EMAIL, SUPPORT_HOURS } from "@/constant/legal";
+import { lineName } from "@/constant/orders";
 import { useCurrentCustomer } from "@/hooks/useCurrentCustomer";
 import { getErrorMessage } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
@@ -110,7 +111,7 @@ function MessageForm() {
             type: "select",
             label: "Which order? (optional)",
             placeholder: orders.data?.orders.length ? "Choose an order" : "No orders yet",
-            options: (orders.data?.orders ?? []).map((order) => ({ value: order.code, label: `${order.code}: ${order.sellers.flatMap((part) => part.lines.map((line) => line.title)).join(", ")}`.slice(0, 80) })),
+            options: (orders.data?.orders ?? []).map((order) => ({ value: order.code, label: `${order.code}: ${order.sellers.flatMap((part) => part.lines.map((line) => lineName(line))).join(", ")}`.slice(0, 80) })),
             clearable: true,
             disabled: !orders.data?.orders.length,
         },
